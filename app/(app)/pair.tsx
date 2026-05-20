@@ -14,6 +14,7 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { useSensorStore } from '../../src/stores/sensorStore';
 import { C } from '../../src/constants/colors';
 import useBLE from '../../src/hooks/useBLE';
+import { partnerSimulator, Scenario } from '../../src/sim/partnerSimulator';
 
 const PAIR_SELECT = 'id,invite_code,user1_id,user2_id,created_at,paired_at';
 
@@ -34,6 +35,7 @@ export default function PairScreen() {
   const [bandName, setBandName] = useState('Ma3akBand');
   const [showBandNaming, setShowBandNaming] = useState(false);
   const [savingBandName, setSavingBandName] = useState(false);
+  const [simScenario, setSimScenario] = useState<Scenario>('off');
 
   const applyPair = (pair: any) => {
     const userId = session?.user?.id;
@@ -396,6 +398,63 @@ export default function PairScreen() {
               </Text>
             )}
           </TouchableOpacity>
+        </View>
+
+
+        {/* Demo: Partner Simulator */}
+        <View style={{ marginTop: 24 }}>
+          <Text
+            style={{
+              color: C.accent,
+              fontSize: 11,
+              fontWeight: 'bold',
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+              marginBottom: 8,
+            }}
+          >
+            Demo · Simulate Partner
+          </Text>
+          <Text style={{ color: C.muted, fontSize: 12, marginBottom: 12 }}>
+            For the capstone demo with a single physical band. Streams scripted
+            partner data into the dashboard at 2 Hz.
+          </Text>
+
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+            {(['off', 'calm', 'stressed', 'distress', 'impact'] as Scenario[]).map((s) => (
+              <TouchableOpacity
+                key={s}
+                onPress={() => {
+                  setSimScenario(s);
+                  if (s === 'off') {
+                    partnerSimulator.stop();
+                  } else {
+                    if (!partnerSimulator.isRunning()) partnerSimulator.start(s);
+                    else partnerSimulator.setScenario(s);
+                  }
+                }}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                  borderRadius: 999,
+                  backgroundColor: simScenario === s ? C.accent : C.card,
+                  borderWidth: 1,
+                  borderColor: simScenario === s ? C.accent : C.border,
+                }}
+              >
+                <Text
+                  style={{
+                    color: simScenario === s ? C.bg : C.text,
+                    fontSize: 13,
+                    fontWeight: '600',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  {s}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Band Naming Modal */}

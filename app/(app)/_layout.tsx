@@ -2,9 +2,11 @@ import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { C } from '../../src/constants/colors';
 import { useSupabaseSync } from '../../src/hooks/useSupabaseSync';
+import { useAnomalyDetection } from '../../src/hooks/useAnomalyDetection';
 
 export default function AppLayout() {
   useSupabaseSync();
+  useAnomalyDetection();
 
   return (
     <Tabs
