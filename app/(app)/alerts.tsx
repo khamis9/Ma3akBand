@@ -4,7 +4,7 @@ import { useSensorStore } from '../../src/stores/sensorStore';
 import { C } from '../../src/constants/colors';
 
 export default function AlertsScreen() {
-  const { lastAnomaly, clearAnomaly } = useSensorStore();
+  const { lastAnomaly, recentAlerts, clearAnomaly } = useSensorStore();
 
   const getAlertIcon = (type: string) => {
     if (type === 'heart' || type === 'high_hr') return 'heart';
@@ -18,6 +18,16 @@ export default function AlertsScreen() {
     if (type === 'low_gsr') return 'Elevated Stress';
     if (type === 'no_motion') return 'No Motion Detected';
     return type;
+  };
+
+  const formatAlertTime = (timestamp: string) => {
+    const alertTime = new Date(timestamp).getTime();
+    const diffMs = Date.now() - alertTime;
+    const diffMin = Math.max(0, Math.round(diffMs / 60000));
+
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin} min ago`;
+    return `${Math.round(diffMin / 60)} hr ago`;
   };
 
   const AlertCard = ({ type, time, severity, icon }: any) => {
@@ -121,24 +131,29 @@ export default function AlertsScreen() {
           Recent Activity
         </Text>
 
-        <AlertCard
-          type="High Heart Rate"
-          time="2 min ago"
-          severity="high"
-          icon="heart"
-        />
-        <AlertCard
-          type="Elevated Stress"
-          time="18 min ago"
-          severity="medium"
-          icon="flash"
-        />
-        <AlertCard
-          type="No Motion Detected"
-          time="1 hr ago"
-          severity="low"
-          icon="body"
-        />
+        {recentAlerts.length === 0 ? (
+          <View
+            style={{
+              backgroundColor: C.card,
+              borderRadius: 12,
+              padding: 16,
+            }}
+          >
+            <Text style={{ color: C.muted, fontSize: 14, textAlign: 'center' }}>
+              No recent alerts
+            </Text>
+          </View>
+        ) : (
+          recentAlerts.map((alert, index) => (
+            <AlertCard
+              key={alert.id || `${alert.timestamp}-${index}`}
+              type={getAlertTypeLabel(alert.type)}
+              time={formatAlertTime(alert.timestamp)}
+              severity={alert.severity}
+              icon={getAlertIcon(alert.type)}
+            />
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );

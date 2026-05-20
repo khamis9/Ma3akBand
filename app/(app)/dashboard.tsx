@@ -5,7 +5,15 @@ import { C } from '../../src/constants/colors';
 import { getStressLabel, getMotionLabel } from '../../src/constants/thresholds';
 
 export default function DashboardScreen() {
-  const { myData, partnerData, lastAnomaly, clearAnomaly, isConnected } = useSensorStore();
+  const {
+    myData,
+    partnerData,
+    lastAnomaly,
+    clearAnomaly,
+    isConnected,
+    isPartnerConnected,
+    isPaired,
+  } = useSensorStore();
 
   const MetricBox = ({ icon, label, value, color }: any) => (
     <View style={{ alignItems: 'center' }}>
@@ -168,12 +176,12 @@ export default function DashboardScreen() {
                 width: 12,
                 height: 12,
                 borderRadius: 6,
-                backgroundColor: isConnected ? C.success : C.muted,
+                backgroundColor: isPartnerConnected ? C.success : isPaired ? C.warning : C.muted,
                 marginRight: 12,
               }}
             />
             <Text style={{ color: C.text, fontSize: 14 }}>
-              Partner {isConnected ? 'Connected' : 'Disconnected'}
+              Partner {isPartnerConnected ? 'Live' : isPaired ? 'Paired' : 'Not Paired'}
             </Text>
           </View>
         </View>

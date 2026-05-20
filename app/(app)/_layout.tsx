@@ -1,8 +1,11 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { C } from '../../src/constants/colors';
+import { useSupabaseSync } from '../../src/hooks/useSupabaseSync';
 
 export default function AppLayout() {
+  useSupabaseSync();
+
   return (
     <Tabs
       screenOptions={{

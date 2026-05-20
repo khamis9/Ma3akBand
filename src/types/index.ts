@@ -1,14 +1,17 @@
 export interface User {
   id: string;
   email: string;
-  username: string;
+  username?: string | null;
+  bandName?: string | null;
 }
 
 export interface Pair {
   id: string;
   inviteCode: string;
   user1Id: string;
-  user2Id: string;
+  user2Id?: string | null;
+  createdAt?: string;
+  pairedAt?: string | null;
 }
 
 export interface SensorData {
@@ -24,9 +27,12 @@ export interface SensorData {
 }
 
 export interface AnomalyAlert {
+  id?: string;
+  pairId?: string;
   userId: string;
   type: 'high_hr' | 'low_gsr' | 'no_motion';
-  severity: 'low' | 'high';
+  severity: 'low' | 'medium' | 'high';
+  message?: string | null;
   timestamp: string;
 }
 

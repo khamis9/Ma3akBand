@@ -43,7 +43,17 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-router"
+      "expo-router",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true,
+          "modes": [
+            "central"
+          ],
+          "bluetoothAlwaysPermission": "Allow Ma3akBand to connect to your bracelet."
+        }
+      ]
     ],
     "extra": {
       "router": {},

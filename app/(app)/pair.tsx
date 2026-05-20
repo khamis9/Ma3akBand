@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -11,26 +11,102 @@ import {
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { supabase } from '../../src/lib/supabase';
 import { useAuthStore } from '../../src/stores/authStore';
+import { useSensorStore } from '../../src/stores/sensorStore';
 import { C } from '../../src/constants/colors';
-import { requestBluetoothPermissions } from '../../src/utils/permissions';
 import useBLE from '../../src/hooks/useBLE';
 
+const PAIR_SELECT = 'id,invite_code,user1_id,user2_id,created_at,paired_at';
+
+const generateInviteCode = () =>
+  Math.random().toString(36).replace(/[^a-z0-9]/gi, '').substring(2, 8).toUpperCase();
+
 export default function PairScreen() {
-  const { session } = useAuthStore();
+  const { session, ensureUserProfile } = useAuthStore();
+  const { setPair } = useSensorStore();
   const [joinCode, setJoinCode] = useState('');
+  const [myCode, setMyCode] = useState('');
   const [paired, setPaired] = useState(false);
   const [pairError, setPairError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingPair, setLoadingPair] = useState(true);
 
   const { isScanning, isConnected, startScan, disconnect, error: bleError } = useBLE();
   const [bandName, setBandName] = useState('Ma3akBand');
   const [showBandNaming, setShowBandNaming] = useState(false);
   const [savingBandName, setSavingBandName] = useState(false);
 
-  const myCode = useMemo(
-    () => Math.random().toString(36).substring(2, 8).toUpperCase(),
-    []
-  );
+  const applyPair = (pair: any) => {
+    const userId = session?.user?.id;
+    const partnerId = pair.user1_id === userId ? pair.user2_id : pair.user1_id;
+
+    setMyCode(pair.invite_code);
+    setPaired(Boolean(pair.user2_id));
+    setPair({
+      pairId: pair.id,
+      partnerId: partnerId || null,
+      inviteCode: pair.invite_code,
+      isPaired: Boolean(pair.user2_id),
+    });
+  };
+
+  const createPairInvite = async (userId: string) => {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const inviteCode = generateInviteCode();
+      const { data, error } = await supabase
+        .from('pairs')
+        .insert({
+          invite_code: inviteCode,
+          user1_id: userId,
+        })
+        .select(PAIR_SELECT)
+        .single();
+
+      if (!error && data) return data;
+      if (error?.code !== '23505') throw error;
+    }
+
+    throw new Error('Could not create a unique invite code. Try again.');
+  };
+
+  const loadOrCreatePair = async () => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+
+    setLoadingPair(true);
+    setPairError('');
+
+    try {
+      await ensureUserProfile();
+
+      const { data: existingPairs, error } = await supabase
+        .from('pairs')
+        .select(PAIR_SELECT)
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      const existingPair = existingPairs?.find((pair: any) => pair.user2_id) || existingPairs?.[0];
+      const pair = existingPair || (await createPairInvite(userId));
+      applyPair(pair);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not set up pairing';
+      setPairError(message);
+    } finally {
+      setLoadingPair(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOrCreatePair();
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (isConnected) {
+      setShowBandNaming(true);
+    }
+  }, [isConnected]);
 
   const handleJoinPair = async () => {
     if (!joinCode.trim()) {
@@ -42,19 +118,18 @@ export default function PairScreen() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('pairs')
-        .select()
-        .eq('invite_code', joinCode.trim().toUpperCase())
-        .single();
+      const normalizedCode = joinCode.trim().toUpperCase();
+      const { data, error } = await supabase.rpc('join_pair_by_code', {
+        code: normalizedCode,
+      });
 
       if (error || !data) {
-        setPairError('Code not found. Check with your partner.');
+        setPairError(error?.message || 'Code not found. Check with your partner.');
       } else {
-        setPaired(true);
+        applyPair(data);
       }
     } catch (err) {
-      setPairError('Code not found. Check with your partner.');
+      setPairError(err instanceof Error ? err.message : 'Code not found. Check with your partner.');
     } finally {
       setLoading(false);
     }
@@ -69,6 +144,7 @@ export default function PairScreen() {
         .eq('id', session?.user?.id);
 
       if (!error) {
+        await ensureUserProfile();
         setShowBandNaming(false);
       }
     } catch (err) {
@@ -82,12 +158,7 @@ export default function PairScreen() {
     if (isConnected) {
       disconnect();
     } else {
-      // Request Bluetooth permissions first
-      const hasPermissions = await requestBluetoothPermissions();
-      if (!hasPermissions) return;
-
       await startScan();
-      setShowBandNaming(true);
     }
   };
 
@@ -155,7 +226,7 @@ export default function PairScreen() {
                 letterSpacing: 8,
               }}
             >
-              {myCode}
+              {loadingPair ? '------' : myCode}
             </Text>
           </View>
 
