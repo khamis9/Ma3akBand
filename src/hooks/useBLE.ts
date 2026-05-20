@@ -133,13 +133,17 @@ const connectToDevice = async (device: any) => {
   stopScan();
 
   try {
-    const connectedDev = await device.connect();
-    const discoveredDevice = await connectedDev.discoverAllServicesAndCharacteristics();
+    const deviceId = device.id;
+    const connectedDev = await bleManager.connectToDevice(deviceId, {
+      timeout: 10000,
+    });
+    const discoveredDevice =
+      await bleManager.discoverAllServicesAndCharacteristicsForDevice(deviceId);
 
     disconnectSubscription?.remove?.();
     monitorSubscription?.remove?.();
 
-    disconnectSubscription = discoveredDevice.onDisconnected(() => {
+    disconnectSubscription = bleManager.onDeviceDisconnected(deviceId, () => {
       monitorSubscription?.remove?.();
       monitorSubscription = null;
       disconnectSubscription?.remove?.();
@@ -152,7 +156,8 @@ const connectToDevice = async (device: any) => {
       });
     });
 
-    monitorSubscription = discoveredDevice.monitorCharacteristicForNotifications(
+    monitorSubscription = bleManager.monitorCharacteristicForDevice(
+      deviceId,
       SERVICE_UUID,
       CHARACTERISTIC_UUID,
       (error: any, characteristic: any) => {
@@ -174,10 +179,17 @@ const connectToDevice = async (device: any) => {
     useSensorStore.getState().setConnected(true);
     emit({
       isConnected: true,
-      connectedDevice: discoveredDevice,
+      connectedDevice: discoveredDevice || connectedDev,
       error: null,
     });
   } catch (connectError) {
+    try {
+      if (device?.id) {
+        await bleManager.cancelDeviceConnection(device.id);
+      }
+    } catch {
+      // The connection may already be closed.
+    }
     useSensorStore.getState().setConnected(false);
     emit({
       isConnected: false,
@@ -226,7 +238,7 @@ const startScan = async () => {
   }, SCAN_TIMEOUT_MS);
 
   bleManager.startDeviceScan(
-    [SERVICE_UUID],
+    null,
     { allowDuplicates: false },
     async (scanError: any, device: any) => {
       if (scanError) {
@@ -242,7 +254,7 @@ const startScan = async () => {
       const matchesName = deviceName === DEVICE_NAME;
       const matchesService = serviceUuids.includes(SERVICE_UUID.toLowerCase());
 
-      if (matchesName || matchesService || !deviceName) {
+      if (matchesName || matchesService) {
         await connectToDevice(device);
       }
     }
@@ -259,8 +271,8 @@ const disconnect = async () => {
     disconnectSubscription?.remove?.();
     disconnectSubscription = null;
 
-    if (bleState.connectedDevice) {
-      await bleState.connectedDevice.cancelConnection();
+    if (bleState.connectedDevice?.id && bleManager) {
+      await bleManager.cancelDeviceConnection(bleState.connectedDevice.id);
     }
 
     useSensorStore.getState().setConnected(false);
