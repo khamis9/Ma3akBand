@@ -15,6 +15,7 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { C } from '../../src/constants/colors';
 
 export default function RegisterScreen() {
+  const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validationError, setValidationError] = useState('');
@@ -28,7 +29,10 @@ export default function RegisterScreen() {
   };
 
   const handleSignUp = async () => {
-    // Local validation
+    if (!nickname.trim()) {
+      setValidationError('Nickname is required');
+      return;
+    }
     if (!email.trim()) {
       setValidationError('Email is required');
       return;
@@ -39,7 +43,7 @@ export default function RegisterScreen() {
     }
 
     setValidationError('');
-    await signUp(email, password);
+    await signUp(email, password, nickname.trim());
 
     // Check if sign up succeeded
     const currentError = useAuthStore.getState().error;
@@ -159,6 +163,25 @@ export default function RegisterScreen() {
           >
             Join Ma3akBand
           </Text>
+
+          <TextInput
+            placeholder="Nickname"
+            placeholderTextColor={C.muted}
+            value={nickname}
+            onChangeText={(text) => {
+              setNickname(text);
+              handleInputChange();
+            }}
+            autoCapitalize="words"
+            style={{
+              backgroundColor: C.card,
+              color: C.text,
+              borderRadius: 12,
+              padding: 14,
+              marginBottom: 12,
+              fontSize: 16,
+            }}
+          />
 
           <TextInput
             placeholder="Email"

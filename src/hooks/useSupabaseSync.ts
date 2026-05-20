@@ -41,6 +41,7 @@ export function useSupabaseSync() {
   const resetPair = useSensorStore((state) => state.resetPair);
   const updatePartnerData = useSensorStore((state) => state.updatePartnerData);
   const setPartnerConnected = useSensorStore((state) => state.setPartnerConnected);
+  const setPartnerName = useSensorStore((state) => state.setPartnerName);
   const triggerAnomaly = useSensorStore((state) => state.triggerAnomaly);
   const setRecentAlerts = useSensorStore((state) => state.setRecentAlerts);
 
@@ -94,6 +95,22 @@ export function useSupabaseSync() {
       cancelled = true;
     };
   }, [session?.user?.id, resetPair, setPair]);
+
+  useEffect(() => {
+    if (!partnerId) {
+      setPartnerName(null);
+      return;
+    }
+    supabase
+      .from('users')
+      .select('username,email')
+      .eq('id', partnerId)
+      .maybeSingle()
+      .then(({ data }) => {
+        const name = data?.username || data?.email?.split('@')[0] || null;
+        setPartnerName(name);
+      });
+  }, [partnerId, setPartnerName]);
 
   useEffect(() => {
     const userId = session?.user?.id;

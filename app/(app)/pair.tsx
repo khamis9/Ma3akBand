@@ -23,7 +23,7 @@ const generateInviteCode = () =>
 
 export default function PairScreen() {
   const { session, ensureUserProfile } = useAuthStore();
-  const { setPair } = useSensorStore();
+  const { setPair, setPartnerName } = useSensorStore();
   const [joinCode, setJoinCode] = useState('');
   const [myCode, setMyCode] = useState('');
   const [paired, setPaired] = useState(false);
@@ -37,7 +37,7 @@ export default function PairScreen() {
   const [savingBandName, setSavingBandName] = useState(false);
   const [simScenario, setSimScenario] = useState<Scenario>('off');
 
-  const applyPair = (pair: any) => {
+  const applyPair = async (pair: any) => {
     const userId = session?.user?.id;
     const partnerId = pair.user1_id === userId ? pair.user2_id : pair.user1_id;
 
@@ -49,6 +49,15 @@ export default function PairScreen() {
       inviteCode: pair.invite_code,
       isPaired: Boolean(pair.user2_id),
     });
+
+    if (partnerId) {
+      const { data } = await supabase
+        .from('users')
+        .select('username')
+        .eq('id', partnerId)
+        .single();
+      setPartnerName(data?.username || null);
+    }
   };
 
   const createPairInvite = async (userId: string) => {

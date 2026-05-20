@@ -1,6 +1,7 @@
 import { SafeAreaView, ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSensorStore } from '../../src/stores/sensorStore';
+import { useAuthStore } from '../../src/stores/authStore';
 import { C } from '../../src/constants/colors';
 import { getStressLabel, getMotionLabel } from '../../src/constants/thresholds';
 
@@ -13,7 +14,12 @@ export default function DashboardScreen() {
     isConnected,
     isPartnerConnected,
     isPaired,
+    partnerName,
   } = useSensorStore();
+  const { user } = useAuthStore();
+
+  const myName = user?.username || 'You';
+  const theirName = partnerName || 'Partner';
 
   const MetricBox = ({ icon, label, value, color }: any) => (
     <View style={{ alignItems: 'center' }}>
@@ -108,9 +114,31 @@ export default function DashboardScreen() {
         <Text style={{ fontSize: 24, fontWeight: 'bold', color: C.text, marginBottom: 4 }}>
           Ma3akBand
         </Text>
-        <Text style={{ fontSize: 14, color: C.muted, marginBottom: 20 }}>
+        <Text style={{ fontSize: 14, color: C.muted, marginBottom: 12 }}>
           Live Health Monitor
         </Text>
+
+        {/* Room Name */}
+        {isPaired && (
+          <View
+            style={{
+              backgroundColor: C.card,
+              borderRadius: 10,
+              paddingVertical: 8,
+              paddingHorizontal: 14,
+              alignSelf: 'flex-start',
+              marginBottom: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <Ionicons name="people" size={14} color={C.accent} />
+            <Text style={{ color: C.accent, fontWeight: 'bold', fontSize: 13 }}>
+              {myName} & {theirName}
+            </Text>
+          </View>
+        )}
 
         {/* Anomaly Alert Banner */}
         {lastAnomaly && (
@@ -138,10 +166,10 @@ export default function DashboardScreen() {
         )}
 
         {/* My Data Card */}
-        <SensorCard title="You" data={myData} />
+        <SensorCard title={myName} data={myData} />
 
         {/* Partner Data Card */}
-        <SensorCard title="Partner" data={partnerData} />
+        <SensorCard title={theirName} data={partnerData} />
 
         {/* Connection Status Card */}
         <View

@@ -112,7 +112,6 @@ export class PartnerSimulator {
     this.setScenario(scenario);
     if (this.timer) return;
     this.timer = setInterval(() => this.tick(), 500);
-    useSensorStore.getState().setPartnerConnected(true);
   }
 
   stop() {
@@ -120,7 +119,6 @@ export class PartnerSimulator {
       clearInterval(this.timer);
       this.timer = null;
     }
-    useSensorStore.getState().setPartnerConnected(false);
   }
 
   setScenario(scenario: Scenario) {
@@ -139,7 +137,7 @@ export class PartnerSimulator {
   private tick() {
     if (!this.gen) return;
     const reading = this.gen.next(Date.now());
-    useSensorStore.getState().updatePartnerData({
+    useSensorStore.getState().updateMyData({
       ...reading,
       anomaly: this.scenario === 'distress' || this.scenario === 'impact',
       recordedAt: new Date().toISOString(),

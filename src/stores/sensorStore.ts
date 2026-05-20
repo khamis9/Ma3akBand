@@ -10,12 +10,14 @@ interface SensorState {
   partnerId: string | null;
   inviteCode: string | null;
   isPaired: boolean;
+  partnerName: string | null;
   lastAnomaly: AnomalyAlert | null;
   recentAlerts: AnomalyAlert[];
   updateMyData: (data: Partial<SensorData>) => void;
   updatePartnerData: (data: Partial<SensorData>) => void;
   setConnected: (val: boolean) => void;
   setPartnerConnected: (val: boolean) => void;
+  setPartnerName: (name: string | null) => void;
   setPair: (pair: {
     pairId: string | null;
     partnerId?: string | null;
@@ -37,6 +39,7 @@ export const useSensorStore = create<SensorState>((set) => ({
   partnerId: null,
   inviteCode: null,
   isPaired: false,
+  partnerName: null,
   lastAnomaly: null,
   recentAlerts: [],
 
@@ -58,6 +61,10 @@ export const useSensorStore = create<SensorState>((set) => ({
 
   setPartnerConnected: (val: boolean) => {
     set({ isPartnerConnected: val });
+  },
+
+  setPartnerName: (name: string | null) => {
+    set({ partnerName: name });
   },
 
   setPair: (pair) => {
@@ -88,6 +95,7 @@ export const useSensorStore = create<SensorState>((set) => ({
       isPaired: false,
       isPartnerConnected: false,
       partnerData: defaultSensorData,
+      partnerName: null,
       recentAlerts: [],
       lastAnomaly: null,
     });

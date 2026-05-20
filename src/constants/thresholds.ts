@@ -4,6 +4,7 @@ export const GSR_STRESS = 1500;
 export const MOTION_TIMEOUT_MS = 30000;
 
 export function getStressLabel(gsr: number): string {
+  if (gsr === 0) return 'Neutral';
   if (gsr > 3000) return 'Calm';
   if (gsr > 2000) return 'Neutral';
   if (gsr > 1000) return 'Stressed';

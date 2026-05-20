@@ -101,9 +101,19 @@ const requestPermissions = async () => {
   }
 };
 
+const repairJson = (s: string): string => {
+  const trimmed = s.trimEnd().replace(/,\s*$/, '');
+  return trimmed.endsWith('}') ? trimmed : trimmed + '}';
+};
+
 const parseSensorPayload = (value: string) => {
   const decodedString = decodeBase64(value);
-  const data = JSON.parse(decodedString);
+  let data: any;
+  try {
+    data = JSON.parse(decodedString);
+  } catch {
+    data = JSON.parse(repairJson(decodedString));
+  }
 
   return {
     bpm: Number(data.bpm || 0),
