@@ -12,6 +12,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { supabase } from '../../src/lib/supabase';
 import { useAuthStore } from '../../src/stores/authStore';
 import { C } from '../../src/constants/colors';
+import { requestBluetoothPermissions } from '../../src/utils/permissions';
 import useBLE from '../../src/hooks/useBLE';
 
 export default function PairScreen() {
@@ -81,6 +82,10 @@ export default function PairScreen() {
     if (isConnected) {
       disconnect();
     } else {
+      // Request Bluetooth permissions first
+      const hasPermissions = await requestBluetoothPermissions();
+      if (!hasPermissions) return;
+
       await startScan();
       setShowBandNaming(true);
     }
